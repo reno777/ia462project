@@ -1,2 +1,2 @@
-# ia462project
-Automated infrastructure for ia462
+#This is for the ia 462 class
+##By Seth and Pat
