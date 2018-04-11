@@ -11,7 +11,7 @@ provider "vsphere" {
 }
 
 data "vsphere_datacenter" "dc"{
-  name = "Rivendell-Datacenter"
+  name          = "Rivendell-Datacenter"
 }
 
 data "vsphere_datastore" "datastore"{
@@ -31,7 +31,7 @@ data "vsphere_network" "network"{
 }
 
 data "vsphere_network" "network1"{
-  name = "ia-DSwitch/ia462project"
+  name = "ia462project"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
@@ -45,7 +45,22 @@ data "vsphere_virtual_machine" "template1" {
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
-resource "vsphere_virtual_machine" "vm" {
+data "vsphere_virtual_machine" "template2" {
+  name          = "gitTemplate"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_virtual_machine" "template3" {
+  name          = "splunkTemplate"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_virtual_machine" "template4" {
+  name          = "webTemplate"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+resource "vsphere_virtual_machine" "ubuntu" {
   name             = "ubuntu"
   resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
@@ -53,7 +68,6 @@ resource "vsphere_virtual_machine" "vm" {
   num_cpus = 1
   memory   = 2048
   guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
-
   scsi_type = "${data.vsphere_virtual_machine.template.scsi_type}"
 
   network_interface {
@@ -62,7 +76,7 @@ resource "vsphere_virtual_machine" "vm" {
   }
 
   disk {
-    label = "disk0"
+    label = "ubuntu.vmdk"
     size  = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
@@ -70,24 +84,10 @@ resource "vsphere_virtual_machine" "vm" {
 
   clone {
     template_uuid = "${data.vsphere_virtual_machine.template.id}"
-#
-#    customize {
-#      linux_options {
-#        host_name = "terraform-test"
-#        domain = drunkle.bgp
-#      }
-#
-#      network_interface {
-#        ipv4_address = "10.10.0.56"
-#        ipv4_netmask = 24
-#      }
-#
-#      ipv4_gateway = "10.10.0.1"
-#    }
   }
 }
 
-resource "vsphere_virtual_machine" "vm1" {
+resource "vsphere_virtual_machine" "pfsense" {
   name             = "pfsense"
   resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
@@ -95,16 +95,20 @@ resource "vsphere_virtual_machine" "vm1" {
   num_cpus = 2
   memory   = 2048
   guest_id = "${data.vsphere_virtual_machine.template1.guest_id}"
-
   scsi_type = "${data.vsphere_virtual_machine.template1.scsi_type}"
+
+  network_interface {
+    network_id = "${data.vsphere_network.network.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template1.network_interface_types[0]}"
+  }
 
   network_interface {
     network_id = "${data.vsphere_network.network1.id}"
     adapter_type = "${data.vsphere_virtual_machine.template1.network_interface_types[0]}"
   }
 
-  disk {
-    label = "disk0"
+ disk {
+    label = "pfsense.vmdk"
     size  = "${data.vsphere_virtual_machine.template1.disks.0.size}"
     eagerly_scrub = "${data.vsphere_virtual_machine.template1.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template1.disks.0.thin_provisioned}"
@@ -112,19 +116,86 @@ resource "vsphere_virtual_machine" "vm1" {
 
   clone {
     template_uuid = "${data.vsphere_virtual_machine.template1.id}"
-#
-#    customize {
-#      linux_options {
-#        host_name = "terraform-test"
-#        domain = drunkle.bgp
-#      }
-#
-#      network_interface {
-#        ipv4_address = "10.10.0.56"
-#        ipv4_netmask = 24
-#      }
-#
-#      ipv4_gateway = "10.10.0.1"
-#    }
+  }
+}
+
+resource "vsphere_virtual_machine" "git" {
+  name             = "git"
+  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  datastore_id     = "${data.vsphere_datastore.datastore.id}"
+
+  num_cpus = 2
+  memory   = 8192
+  guest_id = "${data.vsphere_virtual_machine.template2.guest_id}"
+  scsi_type = "${data.vsphere_virtual_machine.template2.scsi_type}"
+
+  network_interface {
+    network_id = "${data.vsphere_network.network1.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template2.network_interface_types[0]}"
+  }
+
+  disk {
+    label = "git.vmdk"
+    size  = "${data.vsphere_virtual_machine.template2.disks.0.size}"
+    eagerly_scrub = "${data.vsphere_virtual_machine.template2.disks.0.eagerly_scrub}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template2.disks.0.thin_provisioned}"
+  }
+
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template2.id}"
+  }
+}
+
+resource "vsphere_virtual_machine" "splunk" {
+  name             = "splunk"
+  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  datastore_id     = "${data.vsphere_datastore.datastore.id}"
+
+  num_cpus = 2
+  memory   = 4096
+  guest_id = "${data.vsphere_virtual_machine.template3.guest_id}"
+  scsi_type = "${data.vsphere_virtual_machine.template3.scsi_type}"
+
+  network_interface {
+    network_id = "${data.vsphere_network.network1.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template3.network_interface_types[0]}"
+  }
+
+  disk {
+    label = "splunk.vmdk"
+    size  = "${data.vsphere_virtual_machine.template3.disks.0.size}"
+    eagerly_scrub = "${data.vsphere_virtual_machine.template3.disks.0.eagerly_scrub}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template3.disks.0.thin_provisioned}"
+  }
+
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template3.id}"
+  }
+}
+
+resource "vsphere_virtual_machine" "web" {
+  name             = "web"
+  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  datastore_id     = "${data.vsphere_datastore.datastore.id}"
+
+  num_cpus = 1
+  memory   = 2048
+  guest_id = "${data.vsphere_virtual_machine.template4.guest_id}"
+  scsi_type = "${data.vsphere_virtual_machine.template4.scsi_type}"
+
+  network_interface {
+    network_id = "${data.vsphere_network.network1.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template4.network_interface_types[0]}"
+  }
+
+  disk {
+    label = "web.vmdk"
+    size  = "${data.vsphere_virtual_machine.template4.disks.0.size}"
+    eagerly_scrub = "${data.vsphere_virtual_machine.template4.disks.0.eagerly_scrub}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template4.disks.0.thin_provisioned}"
+  }
+
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template4.id}"
   }
 }
