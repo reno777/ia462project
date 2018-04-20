@@ -19,7 +19,6 @@ data "vsphere_datastore" "datastore"{
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
-
 data "vsphere_resource_pool" "pool" {
   name          = "testForProject"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
@@ -57,6 +56,21 @@ data "vsphere_virtual_machine" "template3" {
 
 data "vsphere_virtual_machine" "template4" {
   name          = "webTemplate"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_virtual_machine" "template5" {
+  name          = "dcTemplate"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_virtual_machine" "template6" {
+  name          = "win71Template"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_virtual_machine" "template7" {
+  name          = "win72Template"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
@@ -197,5 +211,86 @@ resource "vsphere_virtual_machine" "web" {
 
   clone {
     template_uuid = "${data.vsphere_virtual_machine.template4.id}"
+  }
+}
+
+resource "vsphere_virtual_machine" "dc" {
+  name             = "dc"
+  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  datastore_id     = "${data.vsphere_datastore.datastore.id}"
+
+  num_cpus = 2
+  memory   = 8192
+  guest_id = "${data.vsphere_virtual_machine.template5.guest_id}"
+  scsi_type = "${data.vsphere_virtual_machine.template5.scsi_type}"
+
+  network_interface {
+    network_id = "${data.vsphere_network.network1.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template5.network_interface_types[0]}"
+  }
+
+  disk {
+    label = "dc.vmdk"
+    size  = "${data.vsphere_virtual_machine.template5.disks.0.size}"
+    eagerly_scrub = "${data.vsphere_virtual_machine.template5.disks.0.eagerly_scrub}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template5.disks.0.thin_provisioned}"
+  }
+
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template5.id}"
+  }
+}
+
+resource "vsphere_virtual_machine" "win71" {
+  name             = "win71"
+  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  datastore_id     = "${data.vsphere_datastore.datastore.id}"
+
+  num_cpus = 2
+  memory   = 4096
+  guest_id = "${data.vsphere_virtual_machine.template6.guest_id}"
+  scsi_type = "${data.vsphere_virtual_machine.template6.scsi_type}"
+
+  network_interface {
+    network_id = "${data.vsphere_network.network1.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template6.network_interface_types[0]}"
+  }
+
+  disk {
+    label = "win71.vmdk"
+    size  = "${data.vsphere_virtual_machine.template6.disks.0.size}"
+    eagerly_scrub = "${data.vsphere_virtual_machine.template6.disks.0.eagerly_scrub}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template6.disks.0.thin_provisioned}"
+  }
+
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template6.id}"
+  }
+}
+
+resource "vsphere_virtual_machine" "win72" {
+  name             = "win72"
+  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  datastore_id     = "${data.vsphere_datastore.datastore.id}"
+
+  num_cpus = 2
+  memory   = 4096
+  guest_id = "${data.vsphere_virtual_machine.template7.guest_id}"
+  scsi_type = "${data.vsphere_virtual_machine.template7.scsi_type}"
+
+  network_interface {
+    network_id = "${data.vsphere_network.network1.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template7.network_interface_types[0]}"
+  }
+
+  disk {
+    label = "win72.vmdk"
+    size  = "${data.vsphere_virtual_machine.template7.disks.0.size}"
+    eagerly_scrub = "${data.vsphere_virtual_machine.template7.disks.0.eagerly_scrub}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template7.disks.0.thin_provisioned}"
+  }
+
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template7.id}"
   }
 }
